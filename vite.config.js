@@ -3,11 +3,10 @@ import react from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
 import dotenv from 'dotenv'
 import path from 'path'
-import fs from 'fs'
 
 // Load .env.local into process.env for local development
-dotenv.config({ path: path.resolve(process.cwd(), '.env.local') })
-dotenv.config({ path: path.resolve(process.cwd(), '.env') })
+dotenv.config({ path: path.resolve(process.cwd(), '.env.local'), override: true })
+dotenv.config({ path: path.resolve(process.cwd(), '.env'), override: true })
 
 export default defineConfig({
   plugins: [
@@ -23,6 +22,9 @@ export default defineConfig({
               req.on('data', chunk => { body += chunk })
               req.on('end', async () => {
                 try {
+                  // Ensure process.env has GEMINI_API_KEY
+                  dotenv.config({ path: path.resolve(process.cwd(), '.env.local'), override: true })
+
                   req.body = JSON.parse(body || '{}')
                   // Load the serverless handler
                   const apiPath = path.resolve(process.cwd(), 'api/chat.js')

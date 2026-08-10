@@ -10,20 +10,23 @@ const tabs = [
 
 export default function Navbar({ onLogout, onNavigate, activeTab }) {
   return (
-    <nav className="bg-white border-b border-gray-200 px-6 py-4">
-      <div className="flex items-center justify-between">
-        {/* Left side */}
-        <div className="flex items-center space-x-8">
+    <header className="bg-white/90 backdrop-blur-md border-b border-gray-100 sticky top-0 z-50 px-8 py-4">
+      <div className="max-w-7xl mx-auto flex items-center justify-between">
+        {/* Left side: Brand + Nav */}
+        <div className="flex items-center space-x-12">
           {/* Logo */}
-          <div className="flex items-center space-x-3">
-            <div className="w-10 h-10 bg-green-600 rounded-full flex items-center justify-center">
-              <Sprout className="w-6 h-6 text-white" />
+          <div 
+            onClick={() => onNavigate && onNavigate('dashboard')}
+            className="flex items-center space-x-3 cursor-pointer group"
+          >
+            <div className="w-9 h-9 bg-emerald-600 rounded-xl flex items-center justify-center text-white shadow-xs group-hover:bg-emerald-700 transition-colors">
+              <Sprout className="w-5 h-5 stroke-[2]" />
             </div>
-            <span className="text-xl font-bold text-gray-800">AgroVision</span>
+            <span className="text-lg font-bold text-gray-900 tracking-tight">AgroVision</span>
           </div>
 
-          {/* Nav tabs */}
-          <div className="flex space-x-6">
+          {/* Navigation links */}
+          <nav className="flex space-x-8">
             {tabs.map((tab) => {
               const Icon = tab.icon;
               const isActive = activeTab === tab.id;
@@ -31,32 +34,32 @@ export default function Navbar({ onLogout, onNavigate, activeTab }) {
                 <button
                   key={tab.id}
                   onClick={() => onNavigate && onNavigate(tab.id)}
-                  className={`flex items-center space-x-2 px-3 py-2 rounded-lg transition-colors ${
+                  className={`flex items-center space-x-2 py-1 text-sm font-medium transition-all ${
                     isActive
-                      ? 'bg-green-50 text-green-700'
-                      : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
+                      ? 'text-emerald-700 font-semibold border-b-2 border-emerald-600 pb-0.5'
+                      : 'text-gray-500 hover:text-gray-900'
                   }`}
                 >
-                  <Icon className="w-4 h-4" />
-                  <span className="text-sm font-medium">{tab.label}</span>
+                  <Icon className={`w-4 h-4 ${isActive ? 'text-emerald-600' : 'text-gray-400'}`} />
+                  <span>{tab.label}</span>
                 </button>
               );
             })}
-          </div>
+          </nav>
         </div>
 
-        {/* Right side */}
-        <div className="flex items-center space-x-4">
-          <span className="text-sm font-medium text-gray-700">Demo User</span>
+        {/* Right side: User info + Logout */}
+        <div className="flex items-center space-x-6">
+          <span className="text-sm font-medium text-gray-600">Demo User</span>
           <button
             onClick={onLogout}
-            className="flex items-center space-x-2 text-red-600 hover:text-red-700 px-3 py-2 rounded-lg hover:bg-red-50 transition-colors"
+            className="flex items-center space-x-2 text-gray-500 hover:text-red-600 px-3 py-2 rounded-xl hover:bg-red-50/50 text-sm font-medium transition-colors"
           >
             <LogOut className="w-4 h-4" />
-            <span className="text-sm font-medium">Logout</span>
+            <span>Logout</span>
           </button>
         </div>
       </div>
-    </nav>
+    </header>
   );
 }

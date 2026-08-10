@@ -16,7 +16,7 @@ const FarmingAssistant = ({ onLogout, onNavigate }) => {
   const [language, setLanguage] = useState('English');
   const [isLoading, setIsLoading] = useState(false);
   const [messages, setMessages] = useState([
-    { type: 'assistant', content: "Hello! I'm your farming assistant. How can I help you today?" }
+    { type: 'assistant', content: "Hello! I'm your AgroVision farming assistant. How can I help you today?" }
   ]);
 
   const messagesEndRef = useRef(null);
@@ -38,7 +38,6 @@ const FarmingAssistant = ({ onLogout, onNavigate }) => {
     setInput('');
     setIsLoading(true);
 
-    // Send last ~10 messages for context (excluding the very first static welcome message if present)
     const conversationHistory = updatedMessages
       .filter((m) => m.type === 'user' || m.type === 'assistant')
       .slice(-10);
@@ -107,18 +106,23 @@ const FarmingAssistant = ({ onLogout, onNavigate }) => {
   };
 
   return (
-    <div className="min-h-screen">
+    <div className="min-h-screen bg-[#FAFAFA]">
       <Navbar onLogout={onLogout} onNavigate={onNavigate} activeTab="assistant" />
-      <div className="p-6">
-        <div className="flex justify-between items-center mb-6">
-          <h1 className="text-3xl font-bold text-green-800">Farming Assistant</h1>
-          <div className="flex items-center space-x-2">
-            <Globe className="w-4 h-4 text-gray-600" />
-            <span className="text-sm text-gray-600">Language:</span>
+      
+      <main className="max-w-7xl mx-auto p-8 space-y-8">
+        {/* Header */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div>
+            <h1 className="text-2xl font-bold text-gray-900 tracking-tight">Farming Assistant</h1>
+            <p className="text-sm text-gray-500 mt-1">Ask questions or receive real-time Gemini AI agricultural recommendations</p>
+          </div>
+          <div className="flex items-center space-x-3 bg-white px-3.5 py-1.5 rounded-xl border border-gray-200/80 shadow-xs">
+            <Globe className="w-4 h-4 text-gray-400" />
+            <span className="text-xs font-medium text-gray-600">Language:</span>
             <select
               value={language}
               onChange={(e) => setLanguage(e.target.value)}
-              className="text-sm border border-gray-200 rounded px-2 py-1 focus:outline-none focus:ring-2 focus:ring-green-500 bg-white"
+              className="text-xs border-0 bg-transparent text-gray-900 font-semibold focus:ring-0 outline-none cursor-pointer"
             >
               <option value="English">English</option>
               <option value="Hindi">Hindi</option>
@@ -127,9 +131,10 @@ const FarmingAssistant = ({ onLogout, onNavigate }) => {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Content Layout */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Chat Container */}
-          <div className="bg-white rounded-xl shadow-sm h-96 flex flex-col lg:col-span-2">
+          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm h-[500px] flex flex-col lg:col-span-2">
             <div className="flex-1 p-6 overflow-y-auto space-y-4">
               {messages.map((msg, index) => (
                 <div
@@ -139,12 +144,12 @@ const FarmingAssistant = ({ onLogout, onNavigate }) => {
                   }`}
                 >
                   <div
-                    className={`max-w-xs lg:max-w-md px-4 py-2 rounded-lg ${
+                    className={`max-w-xs lg:max-w-md px-5 py-3 rounded-2xl text-sm leading-relaxed ${
                       msg.type === 'user'
-                        ? 'bg-green-600 text-white'
+                        ? 'bg-emerald-600 text-white rounded-tr-xs shadow-xs'
                         : msg.isError
-                        ? 'bg-red-50 text-red-700 border border-red-200'
-                        : 'bg-gray-100 text-gray-800'
+                        ? 'bg-red-50 text-red-700 border border-red-200 rounded-tl-xs'
+                        : 'bg-gray-100/80 text-gray-900 rounded-tl-xs'
                     }`}
                   >
                     {msg.content}
@@ -155,10 +160,10 @@ const FarmingAssistant = ({ onLogout, onNavigate }) => {
               {/* Typing / Loading Indicator */}
               {isLoading && (
                 <div className="flex justify-start">
-                  <div className="bg-gray-100 text-gray-800 px-4 py-3 rounded-lg flex items-center space-x-2">
-                    <span className="w-2 h-2 bg-gray-500 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></span>
-                    <span className="w-2 h-2 bg-gray-500 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></span>
-                    <span className="w-2 h-2 bg-gray-500 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></span>
+                  <div className="bg-gray-100/80 text-gray-800 px-5 py-3.5 rounded-2xl rounded-tl-xs flex items-center space-x-2">
+                    <span className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></span>
+                    <span className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></span>
+                    <span className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></span>
                   </div>
                 </div>
               )}
@@ -167,21 +172,25 @@ const FarmingAssistant = ({ onLogout, onNavigate }) => {
             </div>
 
             {/* Input area */}
-            <div className="border-t border-gray-200 p-4">
-              <div className="flex space-x-2">
+            <div className="border-t border-gray-100 p-4 bg-white rounded-b-2xl">
+              <div className="flex items-center space-x-3">
                 <textarea
                   value={input}
                   disabled={isLoading}
                   onChange={(e) => setInput(e.target.value)}
                   onKeyPress={handleKeyPress}
-                  className="flex-1 px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 resize-none disabled:bg-gray-50 disabled:cursor-not-allowed"
+                  className="flex-1 px-4 py-3 bg-white border border-gray-200 rounded-xl text-sm text-gray-900 focus:ring-2 focus:ring-emerald-500 focus:border-transparent outline-none resize-none disabled:bg-gray-50 disabled:cursor-not-allowed transition-all"
                   rows={2}
-                  placeholder={isLoading ? "Waiting for response..." : "Ask me anything about farming..."}
+                  placeholder={isLoading ? "AI is generating advice..." : "Ask me anything about crop health, irrigation, fertilizers..."}
                 />
                 <button
                   onClick={handleSend}
                   disabled={isLoading || !input.trim()}
-                  className="bg-green-600 text-white p-2 rounded-lg hover:bg-green-700 transition-colors flex items-center justify-center disabled:bg-gray-300 disabled:cursor-not-allowed"
+                  className={`p-3 rounded-xl transition-all flex items-center justify-center ${
+                    isLoading || !input.trim()
+                      ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                      : 'bg-emerald-600 hover:bg-emerald-700 text-white shadow-xs cursor-pointer'
+                  }`}
                 >
                   <Send className="w-4 h-4" />
                 </button>
@@ -190,18 +199,20 @@ const FarmingAssistant = ({ onLogout, onNavigate }) => {
           </div>
 
           {/* Quick Questions Sidebar */}
-          <div className="bg-white rounded-xl p-6 shadow-sm flex flex-col">
-            <h3 className="text-lg font-semibold text-gray-800 mb-2">Quick Questions</h3>
-            <p className="text-gray-600 text-sm mb-4">
-              Click on these common questions to get instant answers
-            </p>
-            <div className="space-y-2 overflow-y-auto">
+          <div className="bg-white rounded-2xl p-8 border border-gray-100 shadow-sm flex flex-col space-y-4">
+            <div>
+              <h3 className="text-base font-semibold text-gray-900">Quick Questions</h3>
+              <p className="text-xs text-gray-500 mt-1">
+                Click any prompt to get instant AI guidance
+              </p>
+            </div>
+            <div className="space-y-2.5 overflow-y-auto">
               {quickQuestions.map((q, i) => (
                 <button
                   key={i}
                   disabled={isLoading}
                   onClick={() => handleQuickQuestion(q)}
-                  className="w-full text-left p-3 text-sm text-gray-700 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="w-full text-left p-3.5 text-xs text-gray-700 bg-gray-50/70 border border-gray-100 rounded-xl hover:bg-gray-100/80 transition-all font-medium disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
                 >
                   {q}
                 </button>
@@ -209,7 +220,7 @@ const FarmingAssistant = ({ onLogout, onNavigate }) => {
             </div>
           </div>
         </div>
-      </div>
+      </main>
     </div>
   );
 };

@@ -30,7 +30,7 @@ function App() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-green-50 to-green-100">
+    <div className="min-h-screen bg-[#FAFAFA] text-gray-900 font-sans">
       {currentView === 'login' && (
         <LoginPage
           onLogin={handleLogin}

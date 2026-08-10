@@ -24,7 +24,6 @@ export default async function handler(req, res) {
 
     const systemInstruction = `You are the AgroVision Farming Assistant, an AI advisor for Indian farmers. You give practical, actionable advice on: crop selection, irrigation scheduling, pest and disease control (prefer organic/natural methods when possible), fertilizer recommendations, soil health, weather-based farming decisions, harvest timing, and government agricultural schemes. Keep answers concise (3-5 sentences unless the user asks for detail), use simple language avoiding excessive jargon, and where relevant mention that advice can vary by region/soil type and suggest consulting local agricultural extension officers for critical decisions. If the user's message is in a language other than English, respond in that same language. Current selected language: ${language}.`;
 
-    // Send context: history + system instruction
     let model;
     try {
       model = genAI.getGenerativeModel({
@@ -38,8 +37,21 @@ export default async function handler(req, res) {
       });
     }
 
-    // Convert last 10 messages from client format to Gemini chat history format
-    const formattedHistory = conversationHistory.slice(-10).map((msg) => ({
+    // Filter out the current new message if present at the end of history
+    let priorHistory = (conversationHistory || []).filter(
+      (msg) => !(msg.type === 'user' && msg.content === message)
+    );
+
+    // Gemini requires chat history to start with a 'user' message
+    const firstUserIdx = priorHistory.findIndex((msg) => msg.type === 'user');
+    if (firstUserIdx !== -1) {
+      priorHistory = priorHistory.slice(firstUserIdx);
+    } else {
+      priorHistory = [];
+    }
+
+    // Format for Gemini API
+    const formattedHistory = priorHistory.map((msg) => ({
       role: msg.type === 'user' ? 'user' : 'model',
       parts: [{ text: msg.content }],
     }));

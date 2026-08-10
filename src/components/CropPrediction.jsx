@@ -2,7 +2,15 @@ import React, { useState } from 'react';
 import Navbar from './Navbar';
 import { MapPin, Sprout, Mountain, Droplets, ChevronRight } from 'lucide-react';
 
-const CropPrediction = ({ onLogout, onNavigate }) => {
+const odishaDistricts = [
+  'Bhubaneswar', 'Cuttack', 'Puri', 'Balasore', 'Bhadrak', 'Jajpur',
+  'Kendrapada', 'Jagatsinghpur', 'Khordha', 'Nayagarh', 'Ganjam', 'Gajapati',
+  'Koraput', 'Rayagada', 'Malkangiri', 'Nabarangpur', 'Nuapada', 'Kalahandi',
+  'Bargarh', 'Sambalpur', 'Jharsuguda', 'Sundargarh', 'Deogarh', 'Angul',
+  'Dhenkanal', 'Keonjhar', 'Mayurbhanj', 'Balangir', 'Sonepur', 'Boudh'
+];
+
+export default function CropPrediction({ onLogout, onNavigate }) {
   const [formData, setFormData] = useState({
     state: 'Odisha',
     district: '',
@@ -23,116 +31,122 @@ const CropPrediction = ({ onLogout, onNavigate }) => {
     waterAvailability: ''
   });
 
-  const getDistricts = () => {
-    return [
-      'Bhubaneswar', 'Cuttack', 'Puri', 'Balasore', 'Bhadrak', 'Jajpur', 'Kendrapada',
-      'Jagatsinghpur', 'Khordha', 'Nayagarh', 'Ganjam', 'Gajapati', 'Koraput', 'Rayagada',
-      'Malkangiri', 'Nabarangpur', 'Nuapada', 'Kalahandi', 'Bargarh', 'Sambalpur',
-      'Jharsuguda', 'Sundargarh', 'Deogarh', 'Angul', 'Dhenkanal', 'Keonjhar', 'Mayurbhanj',
-      'Balangir', 'Sonepur', 'Boudh'
-    ];
-  };
-
   const updateField = (field, value) => {
-    setFormData(prev => {
-      const newData = { ...prev, [field]: value };
-      if (field === 'state') {
-        newData.district = '';
-      }
-      return newData;
-    });
+    setFormData((prev) => ({
+      ...prev,
+      [field]: value
+    }));
   };
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    alert('Predicted Yield: 16.8 Q/Ha - This is a demo prediction');
-    onNavigate('dashboard');
+    alert('Predicted Yield: 16.8 Q/Ha - Demo prediction completed');
+    if (onNavigate) {
+      onNavigate('dashboard');
+    }
   };
 
   return (
-    <div className="min-h-screen">
+    <div className="min-h-screen bg-[#FAFAFA]">
       <Navbar onLogout={onLogout} onNavigate={onNavigate} activeTab="crop-prediction" />
       
-      <div className="p-6">
-        <div className="flex justify-between items-center mb-6">
-          <h1 className="text-3xl font-bold text-green-800">Crop Yield Prediction</h1>
-          <span className="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm font-medium">AI-Powered Analysis</span>
+      <main className="max-w-7xl mx-auto p-8 space-y-8">
+        {/* Header */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div>
+            <h1 className="text-2xl font-bold text-gray-900 tracking-tight">Crop Yield Prediction</h1>
+            <p className="text-sm text-gray-500 mt-1">Enter your farm details for AI-driven yield forecasts</p>
+          </div>
+          <div>
+            <span className="inline-flex items-center px-3.5 py-1.5 rounded-full text-xs font-medium bg-emerald-50 text-emerald-700 border border-emerald-100">
+              AI-Powered Analysis
+            </span>
+          </div>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-8">
-          {/* Section 1 - Farm Details */}
-          <div className="bg-white rounded-xl p-6 shadow-sm">
-            <div className="flex items-center space-x-3 mb-4">
-              <MapPin className="w-5 h-5 text-gray-600" />
-              <h2 className="text-lg font-semibold text-gray-800">Farm Details</h2>
+          {/* Section 1: Farm Details */}
+          <div className="bg-white rounded-2xl p-8 border border-gray-100 shadow-sm">
+            <div className="flex items-center space-x-3 mb-1">
+              <MapPin className="w-4 h-4 text-gray-400 stroke-[1.5]" />
+              <h2 className="text-base font-semibold text-gray-900">Farm Details</h2>
             </div>
-            <p className="text-gray-600 text-sm mb-6">Basic information about your farm location and size</p>
-            
+            <p className="text-xs text-gray-500 mb-6">Location and size parameters for your farm</p>
+
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">State</label>
-                <select 
-                  className="w-full px-3 py-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent bg-gray-50"
+                <label className="block text-xs font-medium text-gray-700 mb-2">
+                  State <span className="text-emerald-600">*</span>
+                </label>
+                <select
                   value={formData.state}
                   onChange={(e) => updateField('state', e.target.value)}
+                  className="w-full px-4 py-3 bg-white border border-gray-200 rounded-xl text-sm text-gray-900 focus:ring-2 focus:ring-emerald-500 focus:border-transparent outline-none transition-all"
                 >
                   <option value="Odisha">Odisha</option>
                 </select>
               </div>
-              
+
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">District</label>
-                <select 
-                  className="w-full px-3 py-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent bg-gray-50"
+                <label className="block text-xs font-medium text-gray-700 mb-2">
+                  District <span className="text-emerald-600">*</span>
+                </label>
+                <select
                   value={formData.district}
+                  required
                   onChange={(e) => updateField('district', e.target.value)}
+                  className="w-full px-4 py-3 bg-white border border-gray-200 rounded-xl text-sm text-gray-900 focus:ring-2 focus:ring-emerald-500 focus:border-transparent outline-none transition-all"
                 >
                   <option value="">Select District</option>
-                  {getDistricts().map(d => (
+                  {odishaDistricts.map((d) => (
                     <option key={d} value={d}>{d}</option>
                   ))}
                 </select>
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Village/Area</label>
-                <input 
+                <label className="block text-xs font-medium text-gray-700 mb-2">Village / Area</label>
+                <input
                   type="text"
-                  className="w-full px-3 py-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent bg-gray-50"
                   value={formData.village}
                   onChange={(e) => updateField('village', e.target.value)}
+                  placeholder="Enter village name"
+                  className="w-full px-4 py-3 bg-white border border-gray-200 rounded-xl text-sm text-gray-900 focus:ring-2 focus:ring-emerald-500 focus:border-transparent outline-none transition-all"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Pincode</label>
-                <input 
+                <label className="block text-xs font-medium text-gray-700 mb-2">Pincode</label>
+                <input
                   type="text"
-                  className="w-full px-3 py-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent bg-gray-50"
                   value={formData.pincode}
                   onChange={(e) => updateField('pincode', e.target.value)}
+                  placeholder="Enter 6-digit pincode"
+                  className="w-full px-4 py-3 bg-white border border-gray-200 rounded-xl text-sm text-gray-900 focus:ring-2 focus:ring-emerald-500 focus:border-transparent outline-none transition-all"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Farm Size <span className="text-red-500">*</span>
+                <label className="block text-xs font-medium text-gray-700 mb-2">
+                  Farm Size <span className="text-emerald-600">*</span>
                 </label>
-                <input 
+                <input
                   type="number"
                   required
-                  className="w-full px-3 py-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent bg-gray-50"
+                  step="0.1"
                   value={formData.farmSize}
                   onChange={(e) => updateField('farmSize', e.target.value)}
+                  placeholder="e.g. 4.2"
+                  className="w-full px-4 py-3 bg-white border border-gray-200 rounded-xl text-sm text-gray-900 focus:ring-2 focus:ring-emerald-500 focus:border-transparent outline-none transition-all"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Unit</label>
-                <select 
-                  className="w-full px-3 py-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent bg-gray-50"
+                <label className="block text-xs font-medium text-gray-700 mb-2">Unit</label>
+                <select
                   value={formData.unit}
                   onChange={(e) => updateField('unit', e.target.value)}
+                  className="w-full px-4 py-3 bg-white border border-gray-200 rounded-xl text-sm text-gray-900 focus:ring-2 focus:ring-emerald-500 focus:border-transparent outline-none transition-all"
                 >
                   <option value="Hectare">Hectare</option>
                   <option value="Acre">Acre</option>
@@ -142,24 +156,24 @@ const CropPrediction = ({ onLogout, onNavigate }) => {
             </div>
           </div>
 
-          {/* Section 2 - Crop Information */}
-          <div className="bg-white rounded-xl p-6 shadow-sm">
-            <div className="flex items-center space-x-3 mb-4">
-              <Sprout className="w-5 h-5 text-gray-600" />
-              <h2 className="text-lg font-semibold text-gray-800">Crop Information</h2>
+          {/* Section 2: Crop Information */}
+          <div className="bg-white rounded-2xl p-8 border border-gray-100 shadow-sm">
+            <div className="flex items-center space-x-3 mb-1">
+              <Sprout className="w-4 h-4 text-gray-400 stroke-[1.5]" />
+              <h2 className="text-base font-semibold text-gray-900">Crop Information</h2>
             </div>
-            <p className="text-gray-600 text-sm mb-6">Details about the crop you want to predict</p>
-            
+            <p className="text-xs text-gray-500 mb-6">Crop variety and cultivation timeline</p>
+
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Crop Name <span className="text-red-500">*</span>
+                <label className="block text-xs font-medium text-gray-700 mb-2">
+                  Crop Name <span className="text-emerald-600">*</span>
                 </label>
-                <select 
-                  required
-                  className="w-full px-3 py-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent bg-gray-50"
+                <select
                   value={formData.cropName}
+                  required
                   onChange={(e) => updateField('cropName', e.target.value)}
+                  className="w-full px-4 py-3 bg-white border border-gray-200 rounded-xl text-sm text-gray-900 focus:ring-2 focus:ring-emerald-500 focus:border-transparent outline-none transition-all"
                 >
                   <option value="">Select Crop</option>
                   <option value="Rice">Rice</option>
@@ -174,11 +188,11 @@ const CropPrediction = ({ onLogout, onNavigate }) => {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Variety/Seed Type</label>
-                <select 
-                  className="w-full px-3 py-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent bg-gray-50"
+                <label className="block text-xs font-medium text-gray-700 mb-2">Variety / Seed Type</label>
+                <select
                   value={formData.variety}
                   onChange={(e) => updateField('variety', e.target.value)}
+                  className="w-full px-4 py-3 bg-white border border-gray-200 rounded-xl text-sm text-gray-900 focus:ring-2 focus:ring-emerald-500 focus:border-transparent outline-none transition-all"
                 >
                   <option value="">Select Variety</option>
                   <option value="Hybrid">Hybrid</option>
@@ -188,24 +202,24 @@ const CropPrediction = ({ onLogout, onNavigate }) => {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Sowing Date</label>
-                <input 
+                <label className="block text-xs font-medium text-gray-700 mb-2">Sowing Date</label>
+                <input
                   type="date"
-                  className="w-full px-3 py-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent bg-gray-50"
                   value={formData.sowingDate}
                   onChange={(e) => updateField('sowingDate', e.target.value)}
+                  className="w-full px-4 py-3 bg-white border border-gray-200 rounded-xl text-sm text-gray-900 focus:ring-2 focus:ring-emerald-500 focus:border-transparent outline-none transition-all"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Season <span className="text-red-500">*</span>
+                <label className="block text-xs font-medium text-gray-700 mb-2">
+                  Season <span className="text-emerald-600">*</span>
                 </label>
-                <select 
-                  required
-                  className="w-full px-3 py-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent bg-gray-50"
+                <select
                   value={formData.season}
+                  required
                   onChange={(e) => updateField('season', e.target.value)}
+                  className="w-full px-4 py-3 bg-white border border-gray-200 rounded-xl text-sm text-gray-900 focus:ring-2 focus:ring-emerald-500 focus:border-transparent outline-none transition-all"
                 >
                   <option value="">Select Season</option>
                   <option value="Kharif">Kharif</option>
@@ -216,24 +230,24 @@ const CropPrediction = ({ onLogout, onNavigate }) => {
             </div>
           </div>
 
-          {/* Section 3 - Soil & Inputs */}
-          <div className="bg-white rounded-xl p-6 shadow-sm">
-            <div className="flex items-center space-x-3 mb-4">
-              <Mountain className="w-5 h-5 text-gray-600" />
-              <h2 className="text-lg font-semibold text-gray-800">Soil & Inputs</h2>
+          {/* Section 3: Soil & Inputs */}
+          <div className="bg-white rounded-2xl p-8 border border-gray-100 shadow-sm">
+            <div className="flex items-center space-x-3 mb-1">
+              <Mountain className="w-4 h-4 text-gray-400 stroke-[1.5]" />
+              <h2 className="text-base font-semibold text-gray-900">Soil & Inputs</h2>
             </div>
-            <p className="text-gray-600 text-sm mb-6">Information about your soil type and fertilizer usage</p>
-            
+            <p className="text-xs text-gray-500 mb-6">Soil composition and fertilizer usage</p>
+
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Soil Type <span className="text-red-500">*</span>
+                <label className="block text-xs font-medium text-gray-700 mb-2">
+                  Soil Type <span className="text-emerald-600">*</span>
                 </label>
-                <select 
-                  required
-                  className="w-full px-3 py-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent bg-gray-50"
+                <select
                   value={formData.soilType}
+                  required
                   onChange={(e) => updateField('soilType', e.target.value)}
+                  className="w-full px-4 py-3 bg-white border border-gray-200 rounded-xl text-sm text-gray-900 focus:ring-2 focus:ring-emerald-500 focus:border-transparent outline-none transition-all"
                 >
                   <option value="">Select Soil Type</option>
                   <option value="Clay">Clay</option>
@@ -246,11 +260,11 @@ const CropPrediction = ({ onLogout, onNavigate }) => {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Fertilizer Used</label>
-                <select 
-                  className="w-full px-3 py-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent bg-gray-50"
+                <label className="block text-xs font-medium text-gray-700 mb-2">Fertilizer Used</label>
+                <select
                   value={formData.fertilizerType}
                   onChange={(e) => updateField('fertilizerType', e.target.value)}
+                  className="w-full px-4 py-3 bg-white border border-gray-200 rounded-xl text-sm text-gray-900 focus:ring-2 focus:ring-emerald-500 focus:border-transparent outline-none transition-all"
                 >
                   <option value="">Select Fertilizer</option>
                   <option value="Organic">Organic</option>
@@ -261,51 +275,51 @@ const CropPrediction = ({ onLogout, onNavigate }) => {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Soil pH Level</label>
-                <input 
+                <label className="block text-xs font-medium text-gray-700 mb-2">Soil pH Level</label>
+                <input
                   type="number"
                   step="0.1"
                   min="0"
                   max="14"
-                  placeholder="e.g., 6.5"
-                  className="w-full px-3 py-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent bg-gray-50"
                   value={formData.soilPH}
                   onChange={(e) => updateField('soilPH', e.target.value)}
+                  placeholder="e.g. 6.5"
+                  className="w-full px-4 py-3 bg-white border border-gray-200 rounded-xl text-sm text-gray-900 focus:ring-2 focus:ring-emerald-500 focus:border-transparent outline-none transition-all"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Organic Carbon %</label>
-                <input 
+                <label className="block text-xs font-medium text-gray-700 mb-2">Organic Carbon %</label>
+                <input
                   type="number"
                   step="0.01"
-                  placeholder="e.g., 0.75"
-                  className="w-full px-3 py-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent bg-gray-50"
                   value={formData.organicCarbon}
                   onChange={(e) => updateField('organicCarbon', e.target.value)}
+                  placeholder="e.g. 0.75"
+                  className="w-full px-4 py-3 bg-white border border-gray-200 rounded-xl text-sm text-gray-900 focus:ring-2 focus:ring-emerald-500 focus:border-transparent outline-none transition-all"
                 />
               </div>
             </div>
           </div>
 
-          {/* Section 4 - Irrigation & Water */}
-          <div className="bg-white rounded-xl p-6 shadow-sm">
-            <div className="flex items-center space-x-3 mb-4">
-              <Droplets className="w-5 h-5 text-gray-600" />
-              <h2 className="text-lg font-semibold text-gray-800">Irrigation & Water</h2>
+          {/* Section 4: Irrigation & Water */}
+          <div className="bg-white rounded-2xl p-8 border border-gray-100 shadow-sm">
+            <div className="flex items-center space-x-3 mb-1">
+              <Droplets className="w-4 h-4 text-gray-400 stroke-[1.5]" />
+              <h2 className="text-base font-semibold text-gray-900">Irrigation & Water</h2>
             </div>
-            <p className="text-gray-600 text-sm mb-6">Water management and irrigation details</p>
-            
+            <p className="text-xs text-gray-500 mb-6">Water sources and watering frequencies</p>
+
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Irrigation Source <span className="text-red-500">*</span>
+                <label className="block text-xs font-medium text-gray-700 mb-2">
+                  Irrigation Source <span className="text-emerald-600">*</span>
                 </label>
-                <select 
-                  required
-                  className="w-full px-3 py-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent bg-gray-50"
+                <select
                   value={formData.irrigationSource}
+                  required
                   onChange={(e) => updateField('irrigationSource', e.target.value)}
+                  className="w-full px-4 py-3 bg-white border border-gray-200 rounded-xl text-sm text-gray-900 focus:ring-2 focus:ring-emerald-500 focus:border-transparent outline-none transition-all"
                 >
                   <option value="">Select Source</option>
                   <option value="Tube Well">Tube Well</option>
@@ -317,14 +331,14 @@ const CropPrediction = ({ onLogout, onNavigate }) => {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Irrigation Frequency <span className="text-red-500">*</span>
+                <label className="block text-xs font-medium text-gray-700 mb-2">
+                  Irrigation Frequency <span className="text-emerald-600">*</span>
                 </label>
-                <select 
-                  required
-                  className="w-full px-3 py-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent bg-gray-50"
+                <select
                   value={formData.irrigationFrequency}
+                  required
                   onChange={(e) => updateField('irrigationFrequency', e.target.value)}
+                  className="w-full px-4 py-3 bg-white border border-gray-200 rounded-xl text-sm text-gray-900 focus:ring-2 focus:ring-emerald-500 focus:border-transparent outline-none transition-all"
                 >
                   <option value="">Select Frequency</option>
                   <option value="Daily">Daily</option>
@@ -335,11 +349,11 @@ const CropPrediction = ({ onLogout, onNavigate }) => {
               </div>
 
               <div className="md:col-span-2">
-                <label className="block text-sm font-medium text-gray-700 mb-2">Water Availability</label>
-                <select 
-                  className="w-full px-3 py-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent bg-gray-50"
+                <label className="block text-xs font-medium text-gray-700 mb-2">Water Availability</label>
+                <select
                   value={formData.waterAvailability}
                   onChange={(e) => updateField('waterAvailability', e.target.value)}
+                  className="w-full px-4 py-3 bg-white border border-gray-200 rounded-xl text-sm text-gray-900 focus:ring-2 focus:ring-emerald-500 focus:border-transparent outline-none transition-all"
                 >
                   <option value="">Select Availability</option>
                   <option value="Good">Good</option>
@@ -350,19 +364,18 @@ const CropPrediction = ({ onLogout, onNavigate }) => {
             </div>
           </div>
 
-          <div className="flex justify-center">
-            <button 
+          {/* Submit Button */}
+          <div className="flex justify-end pt-4">
+            <button
               type="submit"
-              className="bg-green-600 text-white px-8 py-3 rounded-lg font-medium hover:bg-green-700 transition-colors flex items-center space-x-2"
+              className="bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl py-3.5 px-8 text-sm font-medium shadow-sm flex items-center space-x-2 transition-all cursor-pointer"
             >
               <span>Predict Yield</span>
               <ChevronRight className="w-4 h-4" />
             </button>
           </div>
         </form>
-      </div>
+      </main>
     </div>
   );
-};
-
-export default CropPrediction;
+}
