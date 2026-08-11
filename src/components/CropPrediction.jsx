@@ -2,17 +2,119 @@ import React, { useState } from 'react';
 import Navbar from './Navbar';
 import { MapPin, Sprout, Mountain, Droplets, ChevronRight } from 'lucide-react';
 
-const odishaDistricts = [
-  'Bhubaneswar', 'Cuttack', 'Puri', 'Balasore', 'Bhadrak', 'Jajpur',
-  'Kendrapada', 'Jagatsinghpur', 'Khordha', 'Nayagarh', 'Ganjam', 'Gajapati',
-  'Koraput', 'Rayagada', 'Malkangiri', 'Nabarangpur', 'Nuapada', 'Kalahandi',
-  'Bargarh', 'Sambalpur', 'Jharsuguda', 'Sundargarh', 'Deogarh', 'Angul',
-  'Dhenkanal', 'Keonjhar', 'Mayurbhanj', 'Balangir', 'Sonepur', 'Boudh'
-];
+const stateDistricts = {
+  'Gujarat': [
+    'Ahmedabad', 'Surat', 'Vadodara', 'Rajkot', 'Bhavnagar', 'Jamnagar',
+    'Junagadh', 'Gandhinagar', 'Anand', 'Mehsana', 'Patan', 'Banaskantha',
+    'Sabarkantha', 'Arvalli', 'Kheda', 'Panchmahals', 'Dahod', 'Narmada',
+    'Bharuch', 'Navsari', 'Valsad', 'Dang', 'Tapi', 'Surendranagar',
+    'Morbi', 'Kutch', 'Porbandar', 'Amreli', 'Gir Somnath', 'Botad'
+  ],
+  'Maharashtra': [
+    'Mumbai', 'Pune', 'Nagpur', 'Nashik', 'Aurangabad', 'Solapur',
+    'Kolhapur', 'Amravati', 'Sangli', 'Satara', 'Raigad', 'Ratnagiri',
+    'Sindhudurg', 'Dhule', 'Nandurbar', 'Jalgaon', 'Buldhana', 'Akola',
+    'Washim', 'Yavatmal', 'Wardha', 'Gondia', 'Bhandara', 'Chandrapur',
+    'Gadchiroli', 'Nanded', 'Hingoli', 'Parbhani', 'Jalna', 'Osmanabad',
+    'Latur', 'Beed', 'Ahmednagar'
+  ],
+  'Uttar Pradesh': [
+    'Lucknow', 'Kanpur', 'Agra', 'Varanasi', 'Prayagraj', 'Meerut',
+    'Bareilly', 'Aligarh', 'Moradabad', 'Gorakhpur', 'Ghaziabad', 'Noida',
+    'Mathura', 'Muzaffarnagar', 'Bulandshahr', 'Hapur', 'Shamli', 'Saharanpur',
+    'Firozabad', 'Etah', 'Mainpuri', 'Farrukhabad', 'Kannauj', 'Hardoi',
+    'Unnao', 'Raebareli', 'Sultanpur', 'Ayodhya', 'Ambedkar Nagar', 'Basti',
+    'Gonda', 'Balrampur', 'Shravasti', 'Bahraich', 'Lakhimpur Kheri', 'Sitapur',
+    'Azamgarh', 'Mau', 'Ballia', 'Ghazipur', 'Jaunpur'
+  ],
+  'Punjab': [
+    'Amritsar', 'Ludhiana', 'Jalandhar', 'Patiala', 'Bathinda', 'Mohali',
+    'Hoshiarpur', 'Gurdaspur', 'Firozpur', 'Faridkot', 'Muktsar', 'Moga',
+    'Barnala', 'Sangrur', 'Fatehgarh Sahib', 'Rupnagar', 'Tarn Taran',
+    'Nawanshahr', 'Kapurthala', 'Mansa', 'Pathankot', 'Fazilka'
+  ],
+  'Haryana': [
+    'Gurugram', 'Faridabad', 'Panipat', 'Ambala', 'Karnal', 'Sonipat',
+    'Rohtak', 'Hisar', 'Sirsa', 'Bhiwani', 'Fatehabad', 'Jind',
+    'Kaithal', 'Kurukshetra', 'Yamunanagar', 'Panchkula', 'Rewari',
+    'Mahendragarh', 'Jhajjar', 'Palwal', 'Nuh', 'Charkhi Dadri'
+  ],
+  'Madhya Pradesh': [
+    'Bhopal', 'Indore', 'Gwalior', 'Jabalpur', 'Ujjain', 'Sagar',
+    'Rewa', 'Satna', 'Dewas', 'Chhindwara', 'Ratlam', 'Shivpuri',
+    'Vidisha', 'Hoshangabad', 'Betul', 'Khandwa', 'Khargone', 'Barwani',
+    'Dhar', 'Jhabua', 'Alirajpur', 'Mandsaur', 'Neemuch', 'Rajgarh',
+    'Raisen', 'Sehore', 'Narsimhapur', 'Mandla', 'Dindori', 'Balaghat',
+    'Seoni', 'Katni', 'Panna', 'Damoh', 'Siddhi', 'Singrauli'
+  ],
+  'Rajasthan': [
+    'Jaipur', 'Jodhpur', 'Kota', 'Bikaner', 'Ajmer', 'Udaipur',
+    'Bharatpur', 'Alwar', 'Sikar', 'Sri Ganganagar', 'Hanumangarh',
+    'Nagaur', 'Pali', 'Barmer', 'Jaisalmer', 'Jalore', 'Sirohi',
+    'Dungarpur', 'Banswara', 'Chittorgarh', 'Bhilwara', 'Rajsamand',
+    'Tonk', 'Bundi', 'Jhalawar', 'Baran', 'Sawai Madhopur', 'Karauli',
+    'Dholpur', 'Dausa', 'Jhunjhunu', 'Churu'
+  ],
+  'Andhra Pradesh': [
+    'Visakhapatnam', 'Vijayawada', 'Guntur', 'Nellore', 'Kurnool',
+    'Tirupati', 'Kakinada', 'Rajahmundry', 'Eluru', 'Ongole',
+    'Anantapur', 'Kadapa', 'Chittoor', 'Srikakulam', 'Vizianagaram',
+    'West Godavari', 'East Godavari', 'Krishna', 'Prakasam'
+  ],
+  'Telangana': [
+    'Hyderabad', 'Warangal', 'Nizamabad', 'Karimnagar', 'Khammam',
+    'Mahbubnagar', 'Nalgonda', 'Adilabad', 'Medak', 'Rangareddy',
+    'Sangareddy', 'Siddipet', 'Jagitial', 'Peddapalli', 'Mancherial',
+    'Nirmal', 'Kamareddy', 'Rajanna Sircilla', 'Jayashankar', 'Bhadradri'
+  ],
+  'Karnataka': [
+    'Bengaluru', 'Mysuru', 'Hubballi', 'Mangaluru', 'Belagavi', 'Kalaburagi',
+    'Davanagere', 'Ballari', 'Vijayapura', 'Tumakuru', 'Shivamogga', 'Raichur',
+    'Bidar', 'Yadgir', 'Koppal', 'Gadag', 'Dharwad', 'Uttara Kannada',
+    'Udupi', 'Chikkamagaluru', 'Hassan', 'Kodagu', 'Mandya', 'Chamrajnagar',
+    'Ramanagara', 'Chikkaballapura', 'Kolar', 'Chitradurga', 'Haveri'
+  ],
+  'Tamil Nadu': [
+    'Chennai', 'Coimbatore', 'Madurai', 'Tiruchirappalli', 'Salem',
+    'Tirunelveli', 'Vellore', 'Erode', 'Thanjavur', 'Dindigul',
+    'Tiruppur', 'Krishnagiri', 'Dharmapuri', 'Cuddalore', 'Nagapattinam',
+    'Tiruvarur', 'Pudukottai', 'Sivaganga', 'Virudhunagar', 'Thoothukudi',
+    'Kanyakumari', 'Ramanathapuram', 'Namakkal', 'Karur', 'Ariyalur',
+    'Perambalur', 'Villupuram', 'Kallakurichi', 'Ranipet', 'Tirupathur'
+  ],
+  'West Bengal': [
+    'Kolkata', 'Darjeeling', 'Jalpaiguri', 'Koch Bihar', 'Alipurduar',
+    'North Dinajpur', 'South Dinajpur', 'Malda', 'Murshidabad', 'Birbhum',
+    'Barddhaman', 'Bankura', 'Purulia', 'West Midnapore', 'East Midnapore',
+    'Jhargram', 'Hooghly', 'Howrah', 'North 24 Parganas', 'South 24 Parganas',
+    'Nadia'
+  ],
+  'Bihar': [
+    'Patna', 'Gaya', 'Bhagalpur', 'Muzaffarpur', 'Purnia', 'Darbhanga',
+    'Ara', 'Begusarai', 'Katihar', 'Munger', 'Chhapra', 'Bettiah',
+    'Motihari', 'Saharsa', 'Supaul', 'Madhepura', 'Kishanganj', 'Araria',
+    'Sitamarhi', 'Sheohar', 'Vaishali', 'Samastipur', 'Madhubani', 'Nalanda',
+    'Nawada', 'Aurangabad', 'Jehanabad', 'Arwal', 'Rohtas', 'Kaimur',
+    'Buxar', 'Bhojpur', 'Gopalganj', 'Siwan', 'Saran'
+  ],
+  'Odisha': [
+    'Bhubaneswar', 'Cuttack', 'Puri', 'Balasore', 'Bhadrak', 'Jajpur',
+    'Kendrapada', 'Jagatsinghpur', 'Khordha', 'Nayagarh', 'Ganjam', 'Gajapati',
+    'Koraput', 'Rayagada', 'Malkangiri', 'Nabarangpur', 'Nuapada', 'Kalahandi',
+    'Bargarh', 'Sambalpur', 'Jharsuguda', 'Sundargarh', 'Deogarh', 'Angul',
+    'Dhenkanal', 'Keonjhar', 'Mayurbhanj', 'Balangir', 'Sonepur', 'Boudh'
+  ],
+  'Himachal Pradesh': [
+    'Shimla', 'Kangra', 'Mandi', 'Solan', 'Sirmaur', 'Una',
+    'Hamirpur', 'Bilaspur', 'Chamba', 'Kullu', 'Kinnaur', 'Lahaul & Spiti'
+  ]
+};
+
+const stateList = Object.keys(stateDistricts).sort();
 
 export default function CropPrediction({ onLogout, onNavigate }) {
   const [formData, setFormData] = useState({
-    state: 'Odisha',
+    state: '',
     district: '',
     village: '',
     pincode: '',
@@ -34,9 +136,13 @@ export default function CropPrediction({ onLogout, onNavigate }) {
   const updateField = (field, value) => {
     setFormData((prev) => ({
       ...prev,
-      [field]: value
+      [field]: value,
+      // Reset district when state changes
+      ...(field === 'state' ? { district: '' } : {})
     }));
   };
+
+  const districts = formData.state ? (stateDistricts[formData.state] || []) : [];
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -80,10 +186,14 @@ export default function CropPrediction({ onLogout, onNavigate }) {
                 </label>
                 <select
                   value={formData.state}
+                  required
                   onChange={(e) => updateField('state', e.target.value)}
                   className="w-full px-4 py-3 bg-white border border-gray-200 rounded-xl text-sm text-gray-900 focus:ring-2 focus:ring-emerald-500 focus:border-transparent outline-none transition-all"
                 >
-                  <option value="Odisha">Odisha</option>
+                  <option value="">Select State</option>
+                  {stateList.map((s) => (
+                    <option key={s} value={s}>{s}</option>
+                  ))}
                 </select>
               </div>
 
@@ -98,7 +208,7 @@ export default function CropPrediction({ onLogout, onNavigate }) {
                   className="w-full px-4 py-3 bg-white border border-gray-200 rounded-xl text-sm text-gray-900 focus:ring-2 focus:ring-emerald-500 focus:border-transparent outline-none transition-all"
                 >
                   <option value="">Select District</option>
-                  {odishaDistricts.map((d) => (
+                  {districts.map((d) => (
                     <option key={d} value={d}>{d}</option>
                   ))}
                 </select>
