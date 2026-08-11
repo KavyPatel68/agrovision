@@ -1,4 +1,4 @@
-import { GoogleGenerativeAI } from '@google/generative-ai';
+import { GoogleGenAI } from '@google/genai';
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
@@ -8,9 +8,9 @@ export default async function handler(req, res) {
   try {
     const apiKey = process.env.GEMINI_API_KEY;
     if (!apiKey) {
-      return res.status(500).json({ 
-        error: "Sorry, I couldn't connect right now, please try again", 
-        details: "GEMINI_API_KEY is not configured on the server. Please set it in .env.local" 
+      return res.status(500).json({
+        error: "Sorry, I couldn't connect right now, please try again",
+        details: "GEMINI_API_KEY is not configured on the server. Please set it in .env.local"
       });
     }
 
@@ -20,29 +20,16 @@ export default async function handler(req, res) {
       return res.status(400).json({ error: 'Message is required' });
     }
 
-    const genAI = new GoogleGenerativeAI(apiKey);
+    const ai = new GoogleGenAI({ apiKey });
 
     const systemInstruction = `You are the AgroVision Farming Assistant, an AI advisor for Indian farmers. You give practical, actionable advice on: crop selection, irrigation scheduling, pest and disease control (prefer organic/natural methods when possible), fertilizer recommendations, soil health, weather-based farming decisions, harvest timing, and government agricultural schemes. Keep answers concise (3-5 sentences unless the user asks for detail), use simple language avoiding excessive jargon, and where relevant mention that advice can vary by region/soil type and suggest consulting local agricultural extension officers for critical decisions. If the user's message is in a language other than English, respond in that same language. Current selected language: ${language}.`;
 
-    let model;
-    try {
-      model = genAI.getGenerativeModel({
-        model: 'gemini-2.5-flash',
-        systemInstruction: systemInstruction,
-      });
-    } catch (e) {
-      model = genAI.getGenerativeModel({
-        model: 'gemini-1.5-flash',
-        systemInstruction: systemInstruction,
-      });
-    }
-
-    // Filter out the current new message if present at the end of history
+    // Build conversation history for context
     let priorHistory = (conversationHistory || []).filter(
       (msg) => !(msg.type === 'user' && msg.content === message)
     );
 
-    // Gemini requires chat history to start with a 'user' message
+    // Gemini requires history to start with a user message
     const firstUserIdx = priorHistory.findIndex((msg) => msg.type === 'user');
     if (firstUserIdx !== -1) {
       priorHistory = priorHistory.slice(firstUserIdx);
@@ -50,25 +37,34 @@ export default async function handler(req, res) {
       priorHistory = [];
     }
 
-    // Format for Gemini API
-    const formattedHistory = priorHistory.map((msg) => ({
-      role: msg.type === 'user' ? 'user' : 'model',
-      parts: [{ text: msg.content }],
-    }));
+    // Build contents array with history + new message
+    const contents = [
+      ...priorHistory.map((msg) => ({
+        role: msg.type === 'user' ? 'user' : 'model',
+        parts: [{ text: msg.content }],
+      })),
+      {
+        role: 'user',
+        parts: [{ text: message }],
+      },
+    ];
 
-    const chat = model.startChat({
-      history: formattedHistory,
+    const response = await ai.models.generateContent({
+      model: 'gemini-2.5-flash',
+      contents,
+      config: {
+        systemInstruction,
+      },
     });
 
-    const result = await chat.sendMessage(message);
-    const responseText = result.response.text();
+    const responseText = response.text;
 
     return res.status(200).json({ reply: responseText });
   } catch (error) {
     console.error('Gemini API Error:', error);
-    return res.status(500).json({ 
+    return res.status(500).json({
       error: "Sorry, I couldn't connect right now, please try again",
-      details: error.message 
+      details: error.message
     });
   }
 }
