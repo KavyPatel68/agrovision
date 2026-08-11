@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import Navbar from './Navbar';
 import { Send, Globe } from 'lucide-react';
+import { GoogleGenAI } from '@google/genai';
 
 const quickQuestions = [
   'How often should I water my crops?',
@@ -10,6 +11,8 @@ const quickQuestions = [
   'When to harvest wheat?',
   'Soil pH management'
 ];
+
+const SYSTEM_INSTRUCTION = `You are the AgroVision Farming Assistant, an AI advisor for Indian farmers. You give practical, actionable advice on: crop selection, irrigation scheduling, pest and disease control (prefer organic/natural methods when possible), fertilizer recommendations, soil health, weather-based farming decisions, harvest timing, and government agricultural schemes. Keep answers concise (3-5 sentences unless the user asks for detail), use simple language avoiding excessive jargon, and where relevant mention that advice can vary by region/soil type and suggest consulting local agricultural extension officers for critical decisions. If the user's message is in a language other than English, respond in that same language.`;
 
 const FarmingAssistant = ({ onLogout, onNavigate }) => {
   const [input, setInput] = useState('');
@@ -38,50 +41,59 @@ const FarmingAssistant = ({ onLogout, onNavigate }) => {
     setInput('');
     setIsLoading(true);
 
-    const conversationHistory = updatedMessages
-      .filter((m) => m.type === 'user' || m.type === 'assistant')
-      .slice(-10);
-
     try {
-      const response = await fetch('/api/chat', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
+      const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
+
+      if (!apiKey) {
+        throw new Error('VITE_GEMINI_API_KEY is not set.');
+      }
+
+      const ai = new GoogleGenAI({ apiKey });
+
+      // Build prior history (excluding the new message just added)
+      let priorHistory = updatedMessages
+        .filter((m) => m.type === 'user' || m.type === 'assistant')
+        .slice(0, -1) // exclude the message we just added
+        .slice(-10);  // keep last 10 for context
+
+      // Gemini requires history to start with a user message
+      const firstUserIdx = priorHistory.findIndex((m) => m.type === 'user');
+      if (firstUserIdx !== -1) {
+        priorHistory = priorHistory.slice(firstUserIdx);
+      } else {
+        priorHistory = [];
+      }
+
+      const contents = [
+        ...priorHistory.map((m) => ({
+          role: m.type === 'user' ? 'user' : 'model',
+          parts: [{ text: m.content }],
+        })),
+        {
+          role: 'user',
+          parts: [{ text: `[Language preference: ${language}]\n${userText}` }],
         },
-        body: JSON.stringify({
-          message: userText,
-          conversationHistory,
-          language,
-        }),
+      ];
+
+      const response = await ai.models.generateContent({
+        model: 'gemini-2.5-flash',
+        contents,
+        config: {
+          systemInstruction: SYSTEM_INSTRUCTION,
+        },
       });
 
-      const data = await response.json();
-
-      if (!response.ok || data.error) {
-        setMessages((prev) => [
-          ...prev,
-          {
-            type: 'assistant',
-            content: data.error || "Sorry, I couldn't connect right now, please try again",
-            isError: true,
-          },
-        ]);
-      } else {
-        setMessages((prev) => [
-          ...prev,
-          {
-            type: 'assistant',
-            content: data.reply,
-          },
-        ]);
-      }
+      setMessages((prev) => [
+        ...prev,
+        { type: 'assistant', content: response.text },
+      ]);
     } catch (err) {
       console.error('Chat error:', err);
       setMessages((prev) => [
         ...prev,
         {
           type: 'assistant',
-          content: "Sorry, I couldn't connect right now, please try again",
+          content: "Sorry, I couldn't connect right now. Please try again.",
           isError: true,
         },
       ]);
@@ -108,7 +120,7 @@ const FarmingAssistant = ({ onLogout, onNavigate }) => {
   return (
     <div className="min-h-screen bg-[#FAFAFA]">
       <Navbar onLogout={onLogout} onNavigate={onNavigate} activeTab="assistant" />
-      
+
       <main className="max-w-7xl mx-auto p-8 space-y-8">
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -139,9 +151,7 @@ const FarmingAssistant = ({ onLogout, onNavigate }) => {
               {messages.map((msg, index) => (
                 <div
                   key={index}
-                  className={`flex ${
-                    msg.type === 'user' ? 'justify-end' : 'justify-start'
-                  }`}
+                  className={`flex ${msg.type === 'user' ? 'justify-end' : 'justify-start'}`}
                 >
                   <div
                     className={`max-w-xs lg:max-w-md px-5 py-3 rounded-2xl text-sm leading-relaxed ${
