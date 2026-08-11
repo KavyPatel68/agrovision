@@ -9,6 +9,7 @@ dotenv.config({ path: path.resolve(process.cwd(), '.env.local'), override: true 
 dotenv.config({ path: path.resolve(process.cwd(), '.env'), override: true })
 
 export default defineConfig({
+  base: '/agrovision/',
   plugins: [
     react(),
     tailwindcss(),
