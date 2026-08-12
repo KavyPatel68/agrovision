@@ -139,6 +139,7 @@ const FarmingAssistant = ({ onLogout, onNavigate }) => {
               <option value="English">English</option>
               <option value="Hindi">Hindi</option>
               <option value="Marathi">Marathi</option>
+              <option value="Gujarati">Gujarati</option>
             </select>
           </div>
         </div>
