@@ -1,6 +1,6 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import Navbar from './Navbar';
-import { Send, Globe } from 'lucide-react';
+import { Send, Globe, Clock, RefreshCw } from 'lucide-react';
 
 const quickQuestions = [
   'How often should I water my crops?',
@@ -13,17 +13,27 @@ const quickQuestions = [
 
 const SYSTEM_INSTRUCTION = `You are the AgroVision Farming Assistant, an AI advisor for Indian farmers. You give practical, actionable advice on: crop selection, irrigation scheduling, pest and disease control (prefer organic/natural methods when possible), fertilizer recommendations, soil health, weather-based farming decisions, harvest timing, and government agricultural schemes. Keep answers concise (3-5 sentences unless the user asks for detail), use simple language avoiding excessive jargon, and where relevant mention that advice can vary by region/soil type and suggest consulting local agricultural extension officers for critical decisions. If the user's message is in a language other than English, respond in that same language.`;
 
-const GEMINI_MODEL = 'gemini-2.5-flash';
+// Models to try in order — fallback if one hits quota
+const GEMINI_MODELS = ['gemini-2.5-flash', 'gemini-1.5-flash-latest', 'gemini-2.0-flash-lite'];
+
+// Extract retry seconds from Gemini rate limit error message
+const parseRetrySeconds = (msg = '') => {
+  const match = msg.match(/retry in ([\d.]+)s/i);
+  return match ? Math.ceil(parseFloat(match[1])) : 60;
+};
 
 const FarmingAssistant = ({ onLogout, onNavigate }) => {
   const [input, setInput] = useState('');
   const [language, setLanguage] = useState('English');
   const [isLoading, setIsLoading] = useState(false);
+  const [retryCountdown, setRetryCountdown] = useState(0); // seconds remaining
+  const [pendingRetry, setPendingRetry] = useState(null);  // { userText, messages }
   const [messages, setMessages] = useState([
     { type: 'assistant', content: "Hello! I'm your AgroVision farming assistant. How can I help you today?" }
   ]);
 
   const messagesEndRef = useRef(null);
+  const countdownRef = useRef(null);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -33,74 +43,153 @@ const FarmingAssistant = ({ onLogout, onNavigate }) => {
     scrollToBottom();
   }, [messages, isLoading]);
 
-  const sendMessageToApi = async (userText, currentMessages) => {
-    if (!userText.trim() || isLoading) return;
+  // Countdown timer for rate limit
+  useEffect(() => {
+    if (retryCountdown <= 0) {
+      clearInterval(countdownRef.current);
+      return;
+    }
+    countdownRef.current = setInterval(() => {
+      setRetryCountdown((prev) => {
+        if (prev <= 1) {
+          clearInterval(countdownRef.current);
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+    return () => clearInterval(countdownRef.current);
+  }, [retryCountdown > 0]);
 
-    const userMessage = { type: 'user', content: userText };
-    const updatedMessages = [...currentMessages, userMessage];
-    setMessages(updatedMessages);
-    setInput('');
+  // Auto-retry when countdown reaches 0
+  useEffect(() => {
+    if (retryCountdown === 0 && pendingRetry) {
+      const { userText, msgs } = pendingRetry;
+      setPendingRetry(null);
+      callGeminiApi(userText, msgs);
+    }
+  }, [retryCountdown]);
+
+  const callGeminiApi = useCallback(async (userText, currentMessages) => {
     setIsLoading(true);
 
-    try {
-      const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
-      if (!apiKey) throw new Error('API key not configured.');
+    const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
+    if (!apiKey) {
+      setMessages((prev) => [...prev, {
+        type: 'assistant',
+        content: '⚠️ API key not configured. Please set VITE_GEMINI_API_KEY.',
+        isError: true
+      }]);
+      setIsLoading(false);
+      return;
+    }
 
-      // Build conversation history
-      let priorHistory = updatedMessages
-        .filter((m) => m.type === 'user' || m.type === 'assistant')
-        .slice(0, -1)
-        .slice(-10);
+    // Build conversation history
+    let priorHistory = currentMessages
+      .filter((m) => m.type === 'user' || m.type === 'assistant')
+      .slice(0, -1)
+      .slice(-10);
+    const firstUserIdx = priorHistory.findIndex((m) => m.type === 'user');
+    priorHistory = firstUserIdx !== -1 ? priorHistory.slice(firstUserIdx) : [];
 
-      const firstUserIdx = priorHistory.findIndex((m) => m.type === 'user');
-      priorHistory = firstUserIdx !== -1 ? priorHistory.slice(firstUserIdx) : [];
+    const contents = [
+      ...priorHistory.map((m) => ({
+        role: m.type === 'user' ? 'user' : 'model',
+        parts: [{ text: m.content }],
+      })),
+      { role: 'user', parts: [{ text: `[Language: ${language}]\n${userText}` }] },
+    ];
 
-      const contents = [
-        ...priorHistory.map((m) => ({
-          role: m.type === 'user' ? 'user' : 'model',
-          parts: [{ text: m.content }],
-        })),
-        {
-          role: 'user',
-          parts: [{ text: `[Language: ${language}]\n${userText}` }],
-        },
-      ];
+    // Try each model in order
+    let lastError = null;
+    for (const model of GEMINI_MODELS) {
+      try {
+        const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
+        const res = await fetch(url, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            system_instruction: { parts: [{ text: SYSTEM_INSTRUCTION }] },
+            contents,
+          }),
+        });
 
-      // Use Gemini REST API directly — works in browser (CORS supported)
-      const url = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${apiKey}`;
+        if (!res.ok) {
+          const errData = await res.json().catch(() => ({}));
+          const msg = errData?.error?.message || `HTTP ${res.status}`;
+          // If quota exceeded, try next model
+          if (res.status === 429 || msg.includes('quota') || msg.includes('RESOURCE_EXHAUSTED')) {
+            lastError = msg;
+            continue; // try next model
+          }
+          throw new Error(msg);
+        }
 
-      const res = await fetch(url, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          system_instruction: { parts: [{ text: SYSTEM_INSTRUCTION }] },
-          contents,
-        }),
-      });
-
-      if (!res.ok) {
-        const errData = await res.json().catch(() => ({}));
-        throw new Error(errData?.error?.message || `HTTP ${res.status}`);
+        const data = await res.json();
+        const reply = data?.candidates?.[0]?.content?.parts?.[0]?.text || 'No response received.';
+        setMessages((prev) => [...prev, { type: 'assistant', content: reply }]);
+        setIsLoading(false);
+        return; // success — exit
+      } catch (err) {
+        lastError = err.message;
+        // Only continue loop for quota errors
+        if (!err.message.includes('quota') && !err.message.includes('RESOURCE_EXHAUSTED') && !err.message.includes('429')) {
+          break;
+        }
       }
+    }
 
-      const data = await res.json();
-      const reply = data?.candidates?.[0]?.content?.parts?.[0]?.text || 'No response received.';
+    // All models failed — show rate limit message with countdown
+    const waitSecs = parseRetrySeconds(lastError || '');
+    const isRateLimit = lastError && (
+      lastError.includes('quota') ||
+      lastError.includes('RESOURCE_EXHAUSTED') ||
+      lastError.includes('429') ||
+      lastError.includes('retry')
+    );
 
-      setMessages((prev) => [...prev, { type: 'assistant', content: reply }]);
-    } catch (err) {
-      console.error('Chat error:', err);
+    if (isRateLimit) {
+      setRetryCountdown(waitSecs);
+      setPendingRetry({ userText, msgs: currentMessages });
       setMessages((prev) => [
         ...prev,
         {
           type: 'assistant',
-          content: `Sorry, I couldn't connect right now. (${err.message})`,
+          content: `rate_limit:${waitSecs}`,
           isError: true,
+          isRateLimit: true,
         },
       ]);
-    } finally {
-      setIsLoading(false);
+    } else {
+      setMessages((prev) => [
+        ...prev,
+        { type: 'assistant', content: `Sorry, something went wrong. Please try again. (${lastError})`, isError: true },
+      ]);
+    }
+    setIsLoading(false);
+  }, [language]);
+
+  const sendMessageToApi = useCallback(async (userText, currentMessages) => {
+    if (!userText.trim() || isLoading || retryCountdown > 0) return;
+    const userMessage = { type: 'user', content: userText };
+    const updatedMessages = [...currentMessages, userMessage];
+    setMessages(updatedMessages);
+    setInput('');
+    await callGeminiApi(userText, updatedMessages);
+  }, [isLoading, retryCountdown, callGeminiApi]);
+
+  const handleManualRetry = () => {
+    if (pendingRetry) {
+      clearInterval(countdownRef.current);
+      setRetryCountdown(0);
+      const { userText, msgs } = pendingRetry;
+      setPendingRetry(null);
+      // Remove the rate-limit message before retrying
+      setMessages((prev) => prev.filter((m) => !m.isRateLimit));
+      callGeminiApi(userText, msgs);
     }
   };
+
 
   const handleSend = () => {
     sendMessageToApi(input, messages);
@@ -154,17 +243,37 @@ const FarmingAssistant = ({ onLogout, onNavigate }) => {
                   key={index}
                   className={`flex ${msg.type === 'user' ? 'justify-end' : 'justify-start'}`}
                 >
-                  <div
-                    className={`max-w-xs lg:max-w-md px-5 py-3 rounded-2xl text-sm leading-relaxed ${
-                      msg.type === 'user'
-                        ? 'bg-emerald-600 text-white rounded-tr-xs shadow-xs'
-                        : msg.isError
-                        ? 'bg-red-50 text-red-700 border border-red-200 rounded-tl-xs'
-                        : 'bg-gray-100/80 text-gray-900 rounded-tl-xs'
-                    }`}
-                  >
-                    {msg.content}
-                  </div>
+                  {msg.isRateLimit ? (
+                    <div className="bg-amber-50 border border-amber-200 rounded-2xl rounded-tl-xs px-5 py-4 max-w-xs lg:max-w-md">
+                      <div className="flex items-center space-x-2 mb-2">
+                        <Clock className="w-4 h-4 text-amber-600" />
+                        <span className="text-sm font-semibold text-amber-800">Rate Limit Reached</span>
+                      </div>
+                      <p className="text-xs text-amber-700 mb-3">
+                        Free API quota used up. Auto-retrying in{' '}
+                        <span className="font-bold text-amber-900">{retryCountdown}s</span>...
+                      </p>
+                      <button
+                        onClick={handleManualRetry}
+                        className="flex items-center space-x-1.5 bg-amber-600 hover:bg-amber-700 text-white text-xs font-medium px-3 py-1.5 rounded-lg transition-all cursor-pointer"
+                      >
+                        <RefreshCw className="w-3 h-3" />
+                        <span>Retry Now</span>
+                      </button>
+                    </div>
+                  ) : (
+                    <div
+                      className={`max-w-xs lg:max-w-md px-5 py-3 rounded-2xl text-sm leading-relaxed ${
+                        msg.type === 'user'
+                          ? 'bg-emerald-600 text-white rounded-tr-xs shadow-xs'
+                          : msg.isError
+                          ? 'bg-red-50 text-red-700 border border-red-200 rounded-tl-xs'
+                          : 'bg-gray-100/80 text-gray-900 rounded-tl-xs'
+                      }`}
+                    >
+                      {msg.content}
+                    </div>
+                  )}
                 </div>
               ))}
 
